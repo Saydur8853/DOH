@@ -13,12 +13,21 @@ model = joblib.load("../models/ssl_oneclass_model.joblib")
 benign = pd.read_csv("../data/ssl_zero_day_benign.csv")
 malicious = pd.read_csv("../data/MaliciousDoH-CSVs/iodine.csv")
 
-# Select numerical features only
-X_benign = benign.select_dtypes(include=[np.number]).drop(columns=["label"], errors='ignore')
-X_malicious = malicious.select_dtypes(include=[np.number])
+# Ensure both datasets have the same features (numerical and used during training)
+expected_features = scaler.feature_names_in_  # This comes from the training scaler
 
-# Combine and scale
-X_all = pd.concat([X_benign, X_malicious], ignore_index=True)
+# Drop non-numeric or irrelevant columns
+benign = benign[expected_features]
+malicious = malicious[expected_features]
+
+# Handle missing values (drop or fill)
+benign.dropna(inplace=True)
+malicious.dropna(inplace=True)
+
+# Combine both datasets
+X_all = pd.concat([benign, malicious], ignore_index=True)
+
+# Scale the data
 X_scaled = scaler.transform(X_all)
 
 # Apply PCA
@@ -29,7 +38,10 @@ X_pca = pca.fit_transform(X_scaled)
 preds = model.predict(X_scaled)
 
 # Assign labels for plotting
-labels = ["Benign"] * len(X_benign) + ["Malicious"] * len(X_malicious)
+labels = ["Benign"] * len(benign) + ["Malicious"] * len(malicious)
+
+# Adjust labels in case rows dropped due to NaNs
+labels = labels[:len(X_pca)]
 
 # Plotting
 plt.figure(figsize=(10, 7))
@@ -39,7 +51,7 @@ for label in set(labels):
 
 # Highlight anomalies
 anomaly_idx = np.where(preds == -1)[0]
-plt.scatter(X_pca[anomaly_idx, 0], X_pca[anomaly_idx, 1], 
+plt.scatter(X_pca[anomaly_idx, 0], X_pca[anomaly_idx, 1],
             facecolors='none', edgecolors='r', label="Anomalies", linewidths=1.5)
 
 plt.title("PCA of Benign vs Malicious DoH Traffic")

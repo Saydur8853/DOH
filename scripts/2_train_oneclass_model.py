@@ -1,58 +1,69 @@
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
 from sklearn.svm import OneClassSVM
-import joblib
-import os
+from sklearn.preprocessing import StandardScaler
+import pandas as pd
 import time
 import threading
+import os
+import joblib
 
-# Define heartbeat spinner function
+# Heartbeat spinner
 def heartbeat():
     while not stop_flag:
         print(".", end="", flush=True)
-        time.sleep(2)
+        time.sleep(1)
 
-# Load the dataset
-csv_path = os.path.join(os.path.dirname(__file__), "../data/ssl_zero_day_benign.csv")  # Adjust path if needed
-df = pd.read_csv(csv_path)
+# Load data
+csv_path = os.path.join(os.path.dirname(__file__), "../data/ssl_zero_day_benign.csv")
+df_full = pd.read_csv(csv_path)
+print("[INFO] Total rows in CSV file:", df_full.shape[0])
 
-print("[INFO] Loaded data:", df.shape, "rows,", list(df.columns))
+# Slice for testing
+df = df_full
+print("[INFO] Loaded data:", df.shape)
 
-# Check for missing values
-missing_total = df.isnull().sum().sum()
-print("[INFO] Total missing values:", missing_total)
-
-# Drop rows with any missing values
-df.dropna(inplace=True)
-print("[INFO] After dropna:", df.shape)
-
-# Drop non-numeric columns
+# Drop non-numeric
 non_numeric_cols = ['SourceIP', 'DestinationIP', 'SourcePort', 'DestinationPort', 'TimeStamp', 'label']
 df_numeric = df.drop(columns=non_numeric_cols, errors='ignore')
-print("[INFO] Drop non-numeric columns done")
+df_numeric.dropna(inplace=True)
 
-# Scale numeric features
+# Scale features
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(df_numeric)
-print("[INFO] Feature scaling done")
 
-# Train One-Class SVM with time and heartbeat
+# Train One-Class SVM with simulated progress
+model = OneClassSVM(kernel='rbf', gamma='auto')
+
 print("[INFO] Training One-Class SVM...")
 start = time.time()
 stop_flag = False
 heartbeat_thread = threading.Thread(target=heartbeat)
 heartbeat_thread.start()
 
-model = OneClassSVM(kernel='rbf', gamma='auto')
-model.fit(X_scaled)
+# Simulated training progress
+batch_size = 10000
+n_batches = X_scaled.shape[0] // batch_size
+
+for i in range(n_batches):
+    batch_data = X_scaled[i * batch_size:(i + 1) * batch_size]
+    model.fit(batch_data)  # Not actual incremental training, for simulation only
+    print(f"\n[INFO] Progress: {(i + 1) * batch_size}/{X_scaled.shape[0]} rows processed")
 
 stop_flag = True
 heartbeat_thread.join()
 end = time.time()
-print(f"\n[INFO] Model training completed in {end - start:.2f} seconds.")
 
-# Save the model and scaler
-joblib.dump(model, "oneclass_model.pkl")
-joblib.dump(scaler, "scaler.pkl")
+print(f"\n[INFO] Model training simulation completed in {end - start:.2f} seconds.")
 
-print("[INFO] Model and scaler saved successfully.")
+# Save
+# joblib.dump(model, "oneclass_model.pkl")
+# joblib.dump(scaler, "scaler.pkl")
+
+# Create models directory if it doesn't exist
+model_dir = os.path.join(os.path.dirname(__file__), "../models")
+os.makedirs(model_dir, exist_ok=True)
+
+# Save scaler and model
+joblib.dump(scaler, os.path.join(model_dir, "ssl_scaler.joblib"))
+joblib.dump(model, os.path.join(model_dir, "ssl_oneclass_model.joblib"))
+print("[INFO] Model and scaler saved.")
+
