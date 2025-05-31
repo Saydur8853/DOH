@@ -9,38 +9,49 @@ model_path = os.path.join(os.path.dirname(__file__), "../models/ssl_oneclass_mod
 scaler = joblib.load(scaler_path)
 model = joblib.load(model_path)
 
-# Load malicious test data
-csv_path = os.path.join(os.path.dirname(__file__), "../data/MaliciousDoH-CSVs/iodine.csv")
-mal_df = pd.read_csv(csv_path)
+# List of malicious CSV files
+csv_files = [
+    "iodine.csv",
+    "dnscat2.csv",
+    "dns2tcp.csv"
+]
 
-print("[INFO] Loaded test data:", mal_df.shape)
+# Directory paths
+data_dir = os.path.join(os.path.dirname(__file__), "../data/MaliciousDoH-CSVs")
+output_dir = os.path.join(os.path.dirname(__file__), "../data")
 
-# Drop rows with missing values
-mal_df.dropna(inplace=True)
+# Process each file
+for file_name in csv_files:
+    csv_path = os.path.join(data_dir, file_name)
+    mal_df = pd.read_csv(csv_path)
+    print(f"[INFO] Loaded test data from {file_name}: {mal_df.shape}")
 
-# Drop same non-numeric columns as in training
-non_numeric_cols = ['SourceIP', 'DestinationIP', 'SourcePort', 'DestinationPort', 'TimeStamp', 'label']
-mal_numeric = mal_df.drop(columns=non_numeric_cols, errors='ignore')
+    # Drop rows with missing values
+    mal_df.dropna(inplace=True)
 
-# Ensure same feature columns as training
-expected_features = scaler.feature_names_in_  # Automatically stored by sklearn >= 1.0
-mal_numeric = mal_numeric[expected_features]  # Ensure order and match
+    # Drop same non-numeric columns as in training
+    non_numeric_cols = ['SourceIP', 'DestinationIP', 'SourcePort', 'DestinationPort', 'TimeStamp', 'label']
+    mal_numeric = mal_df.drop(columns=non_numeric_cols, errors='ignore')
 
-# Scale features
-X_test_scaled = scaler.transform(mal_numeric)
+    # Ensure same feature columns as training
+    expected_features = scaler.feature_names_in_  # sklearn >= 1.0
+    mal_numeric = mal_numeric[expected_features]  # match order and names
 
-# Predict
-preds = model.predict(X_test_scaled)
+    # Scale features
+    X_test_scaled = scaler.transform(mal_numeric)
 
-# Analyze predictions
-anomaly_count = (preds == -1).sum()
-total = len(preds)
-print(f"🚨 Detected {anomaly_count} anomalies out of {total} samples.")
+    # Predict
+    preds = model.predict(X_test_scaled)
 
-# Optional: add predictions to DataFrame and save
-mal_df["Prediction"] = preds
-mal_df["Anomaly"] = mal_df["Prediction"].apply(lambda x: "Malicious" if x == -1 else "Benign")
+    # Analyze predictions
+    anomaly_count = (preds == -1).sum()
+    total = len(preds)
+    print(f"🚨 {file_name}: Detected {anomaly_count} anomalies out of {total} samples.")
 
-output_path = os.path.join(os.path.dirname(__file__), "../data/iodine_predictions.csv")
-mal_df.to_csv(output_path, index=False)
-print(f"[INFO] Prediction results saved to {output_path}")
+    # Save results
+    mal_df["Prediction"] = preds
+    mal_df["Anomaly"] = mal_df["Prediction"].apply(lambda x: "Malicious" if x == -1 else "Benign")
+
+    output_path = os.path.join(output_dir, file_name.replace(".csv", "_predictions.csv"))
+    mal_df.to_csv(output_path, index=False)
+    print(f"[INFO] Prediction results saved to {output_path}")

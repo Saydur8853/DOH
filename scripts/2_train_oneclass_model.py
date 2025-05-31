@@ -5,6 +5,7 @@ import time
 import threading
 import os
 import joblib
+import numpy as np  # ✅ Required for saving .npy files
 
 # Heartbeat spinner
 def heartbeat():
@@ -54,10 +55,6 @@ end = time.time()
 
 print(f"\n[INFO] Model training simulation completed in {end - start:.2f} seconds.")
 
-# Save
-# joblib.dump(model, "oneclass_model.pkl")
-# joblib.dump(scaler, "scaler.pkl")
-
 # Create models directory if it doesn't exist
 model_dir = os.path.join(os.path.dirname(__file__), "../models")
 os.makedirs(model_dir, exist_ok=True)
@@ -67,3 +64,10 @@ joblib.dump(scaler, os.path.join(model_dir, "ssl_scaler.joblib"))
 joblib.dump(model, os.path.join(model_dir, "ssl_oneclass_model.joblib"))
 print("[INFO] Model and scaler saved.")
 
+# ✅ Save features and dummy labels for visualization
+np.save(os.path.join(model_dir, 'features.npy'), X_scaled)
+
+# Create dummy label array (all benign = 1)
+y_dummy = np.ones(X_scaled.shape[0])
+np.save(os.path.join(model_dir, 'labels.npy'), y_dummy)
+print("[INFO] features.npy and labels.npy saved in models/ for PCA visualization.")
