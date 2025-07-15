@@ -5,9 +5,9 @@ from sklearn.decomposition import PCA
 from tensorflow.keras.models import load_model
 
 # === CONFIGURATION ===
-LATENT_FEATURES_PATH = 'output/latent_features.npy'
-LABELS_PATH = 'output/labels.npy'
-ENCODER_MODEL_PATH = 'output/encoder.h5'
+LATENT_FEATURES_PATH = '../models/latent_features.npy'
+LABELS_PATH = '../models/labels.npy'
+ENCODER_MODEL_PATH = '../models/vae_encoder.h5'
 
 # === ENSURE OUTPUT FOLDER EXISTS ===
 os.makedirs('output', exist_ok=True)
@@ -61,4 +61,4 @@ plt.title("VAE Latent Space (PCA Reduced)")
 plt.grid(True)
 plt.tight_layout()
 plt.savefig("output/vae_latent_pca_plot.png")
-plt.show()
+

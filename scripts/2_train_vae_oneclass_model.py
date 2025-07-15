@@ -59,21 +59,33 @@ class VAE(Model):
 
         return reconstructed
 
+    def get_config(self):
+        config = super(VAE, self).get_config()
+        config.update({
+            'input_dim': self.input_dim,
+            'latent_dim': self.latent_dim
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
 # -------------------------------------------
 # 🔹 Data Loading
 # -------------------------------------------
 csv_path = os.path.join(os.path.dirname(__file__), "../data/ssl_zero_day_benign.csv")
 df = pd.read_csv(csv_path)
-print(f"✅ Data loaded. Shape: {df.shape}")
+print(f"Data loaded. Shape: {df.shape}")
 
 # ✅ Save labels before dropping them
 if 'label' in df.columns:
     labels = df['label'].values
     os.makedirs("../models", exist_ok=True)
     np.save('../models/labels.npy', labels)
-    print("✅ Labels saved to ../models/labels.npy")
+    print("Labels saved to ../models/labels.npy")
 else:
-    print("⚠️ 'label' column not found in the dataset.")
+    print("'label' column not found in the dataset.")
 
 # Drop non-numeric and irrelevant columns
 non_numeric_cols = ['SourceIP', 'DestinationIP', 'SourcePort', 
@@ -98,18 +110,18 @@ inputs = Input(shape=(X_scaled.shape[1],))
 z_mean, _ = vae.encode(inputs)
 encoder = Model(inputs, z_mean)
 
-print("\n🔁 Training VAE (5 epochs)...")
+print("\n Training VAE (5 epochs)...")
 vae.fit(X_scaled, X_scaled, epochs=5, batch_size=256)
 
 # -------------------------------------------
 # 🔹 Encode latent space
 # -------------------------------------------
-print("\n📦 Encoding latent features...")
+print("\n Encoding latent features...")
 X_latent = encoder.predict(X_scaled)
 
 # Ensure no NaNs
 if np.isnan(X_latent).any():
-    raise ValueError("❌ Latent features contain NaNs. Check VAE training.")
+    raise ValueError("Latent features contain NaNs. Check VAE training.")
 
 # -------------------------------------------
 # 🔹 Train OneClass SVM with Spinner
@@ -152,7 +164,7 @@ def heartbeat():
         idx += 1
         time.sleep(0.5)
 
-print("\n🌲 Training Isolation Forest...")
+print("\n Training Isolation Forest...")
 
 heartbeat_thread = threading.Thread(target=heartbeat)
 heartbeat_thread.start()
@@ -164,7 +176,7 @@ end_time = time.time()
 
 stop_flag = True
 heartbeat_thread.join()
-print(f"\n✅ Isolation Forest training completed in {end_time - start_time:.2f} seconds.")
+print(f"\n Isolation Forest training completed in {end_time - start_time:.2f} seconds.")
 
 # -------------------------------------------
 # 🔹 Save Models
@@ -177,4 +189,4 @@ joblib.dump(scaler, "../models/ssl_scaler.joblib")
 joblib.dump(iso_forest, "../models/iso_forest_model.joblib")
 np.save("../models/latent_features.npy", X_latent)
 
-print("\n✅ All models saved successfully!")
+print("\n All models saved successfully!")

@@ -73,7 +73,7 @@ class VAE(Model):
 # -------------------------------------------
 # 🔹 Initialize and Load Models
 # -------------------------------------------
-print("🚀 Initializing evaluation pipeline...")
+print("Initializing evaluation pipeline...")
 
 # Create output directory
 vis_dir = os.path.join(os.path.dirname(__file__), "../result")
@@ -85,19 +85,18 @@ scaler = joblib.load(os.path.join(model_dir, "ssl_scaler.joblib"))
 iso_forest = joblib.load(os.path.join(model_dir, "iso_forest_model.joblib"))
 encoder = tf.keras.models.load_model(os.path.join(model_dir, "vae_encoder.h5"))
 
-# Load VAE with custom object scope
-with tf.keras.utils.custom_object_scope({'VAE': VAE}):
-    vae = tf.keras.models.load_model(
-    os.path.join(model_dir, "vae_model"), 
-    custom_objects={'VAE': VAE}
-)
-    # Compile the model after loading
-    vae.compile(optimizer='adam')
+# Load VAE by instantiating, building, and loading weights
+input_dim = len(scaler.feature_names_in_)
+vae = VAE(input_dim=input_dim)
+# Build the model by calling it on a dummy input to create the weights
+vae(tf.zeros((1, input_dim)))
+vae.load_weights(os.path.join(model_dir, "vae_model.h5"))
+vae.compile(optimizer='adam')
 
 # -------------------------------------------
 # 🔹 Data Preparation (Benign + Malicious)
 # -------------------------------------------
-print("\n📊 Preparing datasets...")
+print("\nPreparing datasets...")
 
 non_numeric_cols = ['SourceIP', 'DestinationIP', 'SourcePort', 
                    'DestinationPort', 'TimeStamp', 'label']
@@ -130,7 +129,7 @@ y_true = np.concatenate([y_benign_true, y_mal_true])
 # -------------------------------------------
 # 🔹 Feature Extraction (VAE Latent Space)
 # -------------------------------------------
-print("\n🔮 Extracting latent features...")
+print("\nExtracting latent features...")
 chunk_size = 10000
 X_latent = []
 
@@ -143,7 +142,7 @@ X_latent = np.vstack(X_latent)
 # -------------------------------------------
 # 🔹 Anomaly Detection (Two Methods)
 # -------------------------------------------
-print("\n🛡️ Running detection algorithms...")
+print("\nRunning detection algorithms...")
 
 # Method 1: Isolation Forest on latent features
 iso_pred = iso_forest.predict(X_latent)
@@ -164,7 +163,7 @@ y_pred_vae = np.where(recon_errors > threshold, 0, 1)
 # 🔹 Evaluation Metrics
 # -------------------------------------------
 def evaluate(y_true, y_pred, method_name):
-    print(f"\n🔍 {method_name} Performance:")
+    print(f"{method_name} Performance:")
     print(classification_report(y_true, y_pred, digits=4))
     
     # Confusion Matrix
@@ -184,7 +183,7 @@ evaluate(y_true, y_pred_vae, "VAE Reconstruction")
 # -------------------------------------------
 # 🔹 Advanced Visualizations
 # -------------------------------------------
-print("\n🎨 Generating visualizations...")
+print("\nGenerating visualizations...")
 
 # ROC Curve Comparison
 plt.figure(figsize=(8,6))
@@ -218,4 +217,4 @@ plt.grid(True)
 plt.savefig(os.path.join(vis_dir, "latent_space.png"))
 plt.close()
 
-print("\n✅ Evaluation complete! Results saved to /result directory")
+print("\nEvaluation complete! Results saved to /result directory")
