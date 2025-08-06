@@ -190,3 +190,74 @@ joblib.dump(iso_forest, "../models/iso_forest_model.joblib")
 np.save("../models/latent_features.npy", X_latent)
 
 print("\n All models saved successfully!")
+
+
+
+# This Python script builds an anomaly detection system using a Variational Autoencoder (VAE) and Isolation Forest to identify malicious patterns in DNS traffic. Here's a breakdown of what the code does:
+
+# 🔹 1. Library Imports
+# Essential libraries are imported, including TensorFlow for building deep learning models, scikit-learn for scaling and anomaly detection, and pandas for data manipulation.
+
+# 🔹 2. Custom VAE Class
+# A custom VAE (Variational Autoencoder) class is defined with:
+
+# Encoder to compress the input into latent features.
+
+# Decoder to reconstruct the original input from the latent space.
+
+# Reparameterization trick to sample from the latent distribution.
+
+# KL Divergence and Reconstruction Loss for training.
+
+# 🔹 3. Data Loading
+# Reads benign DNS traffic data from ssl_zero_day_benign.csv.
+# If the label column exists, it's saved separately in a .npy file.
+
+# 🔹 4. Data Preprocessing
+# Removes non-numeric columns like IP addresses and ports.
+
+# Drops rows with missing values.
+
+# Scales the numerical data using StandardScaler.
+
+# 🔹 5. VAE Model Training
+# A VAE model is compiled and trained for 5 epochs on the scaled data.
+
+# A separate encoder model is built to extract latent features.
+
+# 🔹 6. Latent Feature Extraction
+# The encoder is used to generate latent features from the input data.
+# If any NaN values appear, the program raises an error.
+
+# 🔹 7. Isolation Forest Training
+# The latent features are used to train an Isolation Forest, an unsupervised anomaly detection algorithm.
+
+# A spinner animation is shown in the terminal while training for visual feedback.
+
+# (Note: OneClassSVM section is commented out and not used.)
+
+# 🔹 8. Model Saving
+# The following components are saved into the ../models directory:
+
+# vae_model.h5 – full VAE model
+
+# vae_encoder.h5 – encoder model for latent features
+
+# ssl_scaler.joblib – scaler used for standardization
+
+# iso_forest_model.joblib – trained Isolation Forest model
+
+# latent_features.npy – extracted latent features
+
+# ✅ Final Outcome:
+# This script creates an end-to-end anomaly detection pipeline:
+
+# Loads and processes benign DNS traffic data,
+
+# Extracts compressed representations via a VAE,
+
+# Detects outliers using Isolation Forest, and
+
+# Saves all components for future use.
+
+# This system is especially useful for detecting zero-day attacks or unusual behavior in DNS traffic.

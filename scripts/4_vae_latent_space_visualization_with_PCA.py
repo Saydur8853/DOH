@@ -62,3 +62,14 @@ plt.grid(True)
 plt.tight_layout()
 plt.savefig("output/vae_latent_pca_plot.png")
 
+# This script visualizes the latent space learned by a Variational Autoencoder (VAE). It:
+
+# Loads pre-saved latent features and optional labels.
+
+# Reduces the dimensionality of the features to 2D using PCA for easy visualization.
+
+# Plots the data points in a 2D scatter plot, optionally coloring them by their labels (e.g., benign vs. malicious).
+
+# Saves the plot as vae_latent_pca_plot.png in the output directory.
+
+# This visualization helps to understand how well the VAE has separated or clustered different types of traffic in the latent space.

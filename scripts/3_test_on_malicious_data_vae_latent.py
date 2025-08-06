@@ -76,3 +76,25 @@ for file_name in csv_files:
     print(f"💾 Saved predictions to {output_path}")
 
 print("\n✅ All malicious files processed!")
+
+
+
+# This script performs anomaly detection on a set of malicious DNS traffic CSV files using a pre-trained Variational Autoencoder (VAE) encoder and an Isolation Forest model.
+
+# For each malicious file (iodine.csv, dnscat2.csv, and dns2tcp.csv), the script:
+
+# Loads the data and removes missing values.
+
+# Drops non-numeric and irrelevant columns to match the training features.
+
+# Scales the data using a previously saved StandardScaler.
+
+# Uses the VAE encoder to extract latent features from the scaled data.
+
+# Applies the Isolation Forest model to detect anomalies.
+
+# Labels each record as "Malicious" (if prediction is -1) or "Benign" (if prediction is 1).
+
+# Saves the results (with predictions and anomaly labels) into a new CSV file for each input.
+
+# The script helps identify potentially malicious patterns in DNS traffic and outputs labeled data for further analysis or reporting.
